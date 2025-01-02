@@ -1,7 +1,7 @@
 import { generateText } from "ai";
-import { smallOpenAiModel } from "../../../_shared/models";
+import { smallModel } from "../../_shared/models";
 
-const model = smallOpenAiModel;
+const model = smallModel;
 
 export const someFunc = async (input: string) => {
   const { text } = await generateText({
