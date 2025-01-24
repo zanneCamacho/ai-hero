@@ -13,6 +13,7 @@ const App = () => {
     messages,
     addToolResult,
     input,
+    isLoading,
     handleInputChange,
     handleSubmit,
   } = useChat({
@@ -20,11 +21,13 @@ const App = () => {
     initialInput: "Delete example.ts for me",
   });
 
-  const hasUncalledTools = messages.some((message) =>
-    message.toolInvocations?.some(
-      (invocation) => invocation.state === "call",
-    ),
-  );
+  const hasUncalledTools =
+    !isLoading &&
+    messages.some((message) =>
+      message.toolInvocations?.some(
+        (invocation) => invocation.state === "call",
+      ),
+    );
 
   return (
     <Wrapper>
@@ -35,44 +38,48 @@ const App = () => {
             role={message.role}
             content={message.content}
           />
-          {message.toolInvocations
-            ?.filter(
-              (invocation) =>
-                invocation.state === "call",
-            )
-            ?.map((invocation) => (
-              <ToolInvocation
-                key={invocation.toolCallId}
-                toolName={invocation.toolName}
-                args={invocation.args}
-                onProceed={() => {
-                  fetch(
-                    "http://localhost:4317/api/call-tool",
-                    {
-                      method: "POST",
-                      body: JSON.stringify(invocation),
-                    },
-                  )
-                    .then((r) => r.json())
-                    .then((r) => {
-                      addToolResult({
-                        toolCallId:
-                          invocation.toolCallId,
-                        result: r,
-                      });
-                    })
-                    .catch((e) => {
-                      addToolResult({
-                        toolCallId:
-                          invocation.toolCallId,
-                        result: JSON.stringify({
-                          error: e.message,
-                        }),
-                      });
-                    });
-                }}
-              />
-            ))}
+          {hasUncalledTools
+            ? message.toolInvocations
+                ?.filter(
+                  (invocation) =>
+                    invocation.state === "call",
+                )
+                ?.map((invocation) => (
+                  <ToolInvocation
+                    key={invocation.toolCallId}
+                    toolName={invocation.toolName}
+                    args={invocation.args}
+                    onProceed={() => {
+                      fetch(
+                        "http://localhost:4317/api/call-tool",
+                        {
+                          method: "POST",
+                          body: JSON.stringify(
+                            invocation,
+                          ),
+                        },
+                      )
+                        .then((r) => r.json())
+                        .then((r) => {
+                          addToolResult({
+                            toolCallId:
+                              invocation.toolCallId,
+                            result: r,
+                          });
+                        })
+                        .catch((e) => {
+                          addToolResult({
+                            toolCallId:
+                              invocation.toolCallId,
+                            result: JSON.stringify({
+                              error: e.message,
+                            }),
+                          });
+                        });
+                    }}
+                  />
+                ))
+            : null}
         </>
       ))}
       <ChatInput
