@@ -1,12 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
-import { serper } from "../../tools/01-serper-TODO/tools.ts";
 import dedent from "dedent";
+import { z } from "zod";
 import { viewAIHeroPosts } from "../../projects/03-personal-agent/main.ts";
+import { serper } from "../../tools/01-serper-TODO/tools.ts";
 import { bulkCrawlWebsites } from "./crawl-site.ts";
-import pg from "pg";
-import { logger } from "./logger.ts";
 
 const server = new McpServer({
   name: "General Service",
@@ -98,60 +96,6 @@ server.tool(
         }
       }),
     };
-  },
-);
-
-const client = new pg.Client({
-  connectionString: process.env.DATABASE_URL,
-});
-
-server.tool(
-  `queryDatabase`,
-  dedent`
-    Query the written content manager database.
-    
-  `,
-  {
-    query: z
-      .string()
-      .describe(`A postgres query to run`),
-  },
-  async ({ query }) => {
-    try {
-      await client.connect();
-
-      await client.query(
-        `SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY;`,
-      );
-      const res = await client.query(query);
-
-      await client.end();
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(res.rows, null, 2),
-          },
-        ],
-      };
-    } catch (e) {
-      logger.error(`Error querying database`, e);
-      return {
-        isError: true,
-        content: [
-          {
-            type: "text" as const,
-            text:
-              typeof e === "object" &&
-              e &&
-              "message" in e
-                ? (e.message as string)
-                : "An unknown error occurred.",
-          },
-        ],
-      };
-    }
   },
 );
 
