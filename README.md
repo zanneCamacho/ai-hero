@@ -65,3 +65,35 @@ Runs the first example of [examples/vercel-ai-sdk](./examples/vercel-ai-sdk/). E
 ```bash
 pnpm run example v 01
 ```
+
+
+## Audit Log
+
+Every mutating action is automatically audited.
+
+### What gets logged
+- Who did it (user ID + IP)
+- What they did (endpoint + HTTP method)
+- When (timestamp)
+- Before → after (changed fields)
+- Correlation ID (trace linking)
+
+### Query audit trail
+```sql
+SELECT * FROM audit_log 
+WHERE target_type = 'item' AND target_id = 42 
+ORDER BY created_at DESC;
+```
+
+### Disable for specific endpoints
+```yaml
+repo:
+  audit:
+    exclude-paths:
+      - /api/auth/login
+      - /api/auth/refresh
+```
+
+### Retention
+Default: 180 days. Override: `repo.audit.retention-days`.
+Older entries moved to cold storage or deleted.
